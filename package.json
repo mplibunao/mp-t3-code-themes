@@ -6,7 +6,9 @@
   "scripts": {
     "prepare": "vp config --no-agent",
     "typecheck": "tsc -p tsconfig.scripts.json && tsc -p site/tsconfig.json",
-    "test": "vp test run"
+    "test": "vp test run",
+    "themes:build": "bun scripts/themes.ts build",
+    "themes:check": "bun scripts/themes.ts check"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",

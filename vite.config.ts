@@ -198,6 +198,12 @@ export default defineConfig({
     overrides: [
       ...boundaries,
       {
+        // The artwork, the drawing steps, and the stage geometry are numbers by nature. Naming
+        // each one would restructure code whose output must stay byte-identical.
+        files: ["src/save-point/**"],
+        rules: { "no-magic-numbers": "off" },
+      },
+      {
         // Size limits don't fit test files. Depth, complexity, and parameter limits still apply.
         files: ["test/**", "e2e/**"],
         rules: {

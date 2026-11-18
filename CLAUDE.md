@@ -6,9 +6,11 @@ A TypeScript workspace that builds T3 Code themes.
 
 - `mise install` installs the pinned tools. `pnpm install` then installs dependencies and sets up the git hooks.
 - `just setup` syncs the Vale packages. Run it after cloning and after `.vale.ini` changes.
-- `just check` runs the gate: format check, lint, both TypeScript projects, the Vitest tests, and prose. CI runs the same recipe as `just ci`.
+- `just check` runs the gate: format check, lint, both TypeScript projects, the Vitest tests, prose, and `pnpm themes:check`. CI runs the same recipe as `just ci`.
 - `pnpm typecheck` checks `tsconfig.scripts.json` and `site/tsconfig.json`.
 - `pnpm test` runs the Vitest tests under `test/`.
+- `pnpm themes:build` builds every theme into `themes/`. The files there are generated: change the source under `src/` and build again.
+- `pnpm themes:check` builds every theme in memory and compares the result with `themes/`, byte for byte. It doesn't write files.
 
 ## Dependency directions
 
