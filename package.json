@@ -8,7 +8,8 @@
     "typecheck": "tsc -p tsconfig.scripts.json && tsc -p site/tsconfig.json",
     "test": "vp test run",
     "themes:build": "bun scripts/themes.ts build",
-    "themes:check": "bun scripts/themes.ts check"
+    "themes:check": "bun scripts/themes.ts check",
+    "themes:install": "bun scripts/themes.ts install"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",

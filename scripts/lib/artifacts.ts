@@ -109,7 +109,18 @@ const publishFile = Effect.fnUntraced(function* (target: string, bytes: Uint8Arr
   );
 });
 
-const publishFiles = Effect.fnUntraced(function* (directory: string, files: readonly ThemeFile[]) {
+/**
+ * Writes files into `directory` in the given order, each atomically. A failure stops the rest and
+ * names the files already replaced.
+ *
+ * @param directory - The themes folder. Created if it's missing.
+ * @param files - Files in publishing order: each background before its JSON.
+ * @returns The paths written, in order.
+ */
+export const publishFiles = Effect.fnUntraced(function* (
+  directory: string,
+  files: readonly ThemeFile[],
+) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   yield* fs.makeDirectory(directory, { recursive: true });
