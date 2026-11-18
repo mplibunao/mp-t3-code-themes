@@ -6,11 +6,14 @@ A TypeScript workspace that builds T3 Code themes.
 
 - `mise install` installs the pinned tools. `pnpm install` then installs dependencies and sets up the git hooks.
 - `just setup` syncs the Vale packages. Run it after cloning and after `.vale.ini` changes.
-- `just check` runs the gate: format check, lint, both TypeScript projects, the Vitest tests, prose, and `pnpm themes:check`. CI runs the same recipe as `just ci`.
-- `pnpm typecheck` checks `tsconfig.scripts.json` and `site/tsconfig.json`.
+- `just check` runs the gate: format check, lint, the TypeScript projects, the Vitest tests, prose, `pnpm themes:check`, `pnpm build`, and `pnpm test:e2e`. CI runs the same recipe as `just ci`.
+- `pnpm typecheck` checks `tsconfig.scripts.json`, `site/tsconfig.json`, and `e2e/tsconfig.json`. The browser tests have a project of their own because the code they run in the page needs the DOM library, which `tsconfig.scripts.json` leaves out.
 - `pnpm test` runs the Vitest tests under `test/`.
 - `pnpm themes:build` builds every theme into `themes/`. The files there are generated: change the source under `src/` and build again.
 - `pnpm themes:check` builds every theme in memory and compares the result with `themes/`, byte for byte. It doesn't write files.
+- `pnpm build` copies the committed files in `themes/` into `.site-public/themes/`, then builds the demo in `site/` into `dist/`, under the base path `/mp-t3-code-themes/`. It never rebuilds the themes.
+- `pnpm dev` makes the same copy once, then serves the demo with Vite.
+- `pnpm test:e2e` runs the Playwright tests in `e2e/` against `dist/`, so run `pnpm build` first. On a new machine, `pnpm exec playwright install chromium` downloads the pinned browser once.
 - `pnpm themes:install [id...] [--base-dir DIR]` copies the files in `themes/` into `<home>/userdata/themes` without rebuilding them. No ids means every theme. The home is `--base-dir`, then `T3CODE_HOME`, then `~/.t3`. The command then runs `t3 theme show --base-dir <home>` once and warns when a theme isn't listed. It exits 0 once it has copied the files, whatever the check finds.
 
 ## Dependency directions

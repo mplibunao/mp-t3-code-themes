@@ -1,5 +1,5 @@
 import { Data, Effect } from "effect";
-import { catalog, isThemeId, type ThemeId } from "../../src/catalog.ts";
+import { themeIds, type ThemeId } from "../../src/catalog.ts";
 import { buildSavePoint } from "../../src/save-point/index.ts";
 import type { BuiltTheme } from "../../src/theme-contract.ts";
 
@@ -7,9 +7,6 @@ import type { BuiltTheme } from "../../src/theme-contract.ts";
 const builders: { readonly [Id in ThemeId]: () => BuiltTheme } = {
   "save-point": buildSavePoint,
 };
-
-/** Every catalogued theme, in catalog order. */
-export const themeIds: readonly ThemeId[] = Object.keys(catalog).filter(isThemeId);
 
 /** A builder threw, which means its artwork or rendering input is invalid. */
 export class ThemeBuildError extends Data.TaggedError("ThemeBuildError")<{

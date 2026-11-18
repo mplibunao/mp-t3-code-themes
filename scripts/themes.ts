@@ -5,9 +5,9 @@ import { BunRuntime, BunServices } from "@effect/platform-bun";
 import { Console, Data, Effect, Option, Path, Runtime } from "effect";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
-import { isThemeId, type ThemeId } from "../src/catalog.ts";
+import { isThemeId, themeIds, type ThemeId } from "../src/catalog.ts";
 import { checkThemes, writeThemes } from "./lib/artifacts.ts";
-import { buildThemes, themeIds } from "./lib/build-themes.ts";
+import { buildThemes } from "./lib/build-themes.ts";
 import { installThemes } from "./lib/install.ts";
 
 const USAGE = `Usage: bun scripts/themes.ts <command>

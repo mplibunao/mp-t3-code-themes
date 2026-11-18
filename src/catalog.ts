@@ -20,3 +20,6 @@ export const catalog = {
 export type ThemeId = keyof typeof catalog;
 
 export const isThemeId = (value: string): value is ThemeId => Object.hasOwn(catalog, value);
+
+/** Every catalogued theme, in catalog order. */
+export const themeIds: readonly ThemeId[] = Object.keys(catalog).filter(isThemeId);

@@ -1,0 +1,600 @@
+/* The made-up T3 Code window. Its geometry follows T3 Code's layout (apps/web/src/index.css,
+   components/ChatView.tsx, chat/ComposerSurface.tsx, chat/ComposerBanner.tsx): the conversation
+   and the composer overlay are siblings in a positioned workspace, and nothing around the composer
+   clips, because a theme can draw above its top edge. Colours are the theme's --app-theme-*
+   variables, with neutral values until a theme loads. */
+
+:root {
+  --background: var(--app-theme-canvas, #17171c);
+  --foreground: var(--app-theme-text, #e7e7ec);
+  --muted-foreground: var(--app-theme-text-muted, #a0a0ab);
+  --secondary-label: var(--app-theme-secondary-label, #a0a0ab);
+  --icon-muted: var(--app-theme-icon-muted, #8e8e99);
+  --placeholder: var(--app-theme-placeholder, #7c7c87);
+  --input: var(--app-theme-input, #3d3d46);
+  --focus: var(--app-theme-focus, #a0a0ab);
+  --surface-raised: var(--app-theme-surface-raised, #222228);
+  --message-surface: var(--app-theme-message-surface, #2a2a31);
+  --message-foreground: var(--app-theme-message-foreground, #f2f2f5);
+  --message-action: var(--app-theme-message-action, #e7e7ec);
+  --message-action-foreground: var(--app-theme-message-action-foreground, #17171c);
+  --message-action-hover: var(--app-theme-message-action-hover, #ffffff);
+  --code-background: var(--app-theme-code-background, #111115);
+  --code-foreground: var(--app-theme-code-foreground, #dedee4);
+  --sidebar: var(--app-theme-sidebar, #121216);
+  --sidebar-foreground: var(--app-theme-sidebar-foreground, #e7e7ec);
+  --sidebar-muted-foreground: var(--app-theme-sidebar-muted-foreground, #9a9aa5);
+  --sidebar-control-surface: var(--app-theme-sidebar-control-surface, #22222a);
+  --sidebar-row-selected: var(--app-theme-sidebar-row-selected, #26262d);
+  --sidebar-border: var(--app-theme-sidebar-border, #26262d);
+  --toolbar: var(--app-theme-toolbar, #111114);
+  --toolbar-foreground: var(--app-theme-toolbar-foreground, #e7e7ec);
+  --toolbar-control: var(--app-theme-toolbar-control, #1d1d22);
+  --toolbar-control-foreground: var(--app-theme-toolbar-control-foreground, #e7e7ec);
+
+  --chat-content-max-width: 46rem;
+  --lane-padding: 3rem;
+  --glass-opacity: 80%;
+  --glass-blur: 16px;
+  --glass-saturation: 1.08;
+  --drawer-inset: 1.375rem;
+  /* The drawer tucks this much of its bottom under the card. */
+  --attachment-overlap: calc(1rem + 1px);
+}
+
+:root[data-chat-width="wide"] {
+  --chat-content-max-width: 72rem;
+}
+
+:root[data-chat-width="full"] {
+  --chat-content-max-width: 100%;
+}
+
+@media (width < 640px) {
+  :root {
+    --lane-padding: 0.75rem;
+  }
+}
+
+.mock-viewport {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.mock-app {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font:
+    14px/1.5 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+:where(.mock-app) p {
+  margin: 0;
+}
+
+/* Sidebar */
+
+.mock-sidebar {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 220px;
+  padding: 12px 8px;
+  border-right: 1px solid var(--sidebar-border);
+  background: var(--sidebar);
+  color: var(--sidebar-foreground);
+}
+
+@media (width < 640px) {
+  .mock-sidebar {
+    display: none;
+  }
+}
+
+.mock-new-thread {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding-inline: 12px;
+  border-radius: 8px;
+  background: var(--sidebar-control-surface);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mock-project {
+  margin: 14px 12px 4px;
+  color: var(--sidebar-muted-foreground);
+  font-size: 12px;
+}
+
+.mock-threads {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mock-thread {
+  display: block;
+  overflow: hidden;
+  padding: 6px 10px 6px 14px;
+  border-radius: 8px;
+  color: var(--sidebar-muted-foreground);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mock-thread[aria-current="page"] {
+  background: var(--sidebar-row-selected);
+  color: var(--sidebar-foreground);
+}
+
+/* Chat column */
+
+.mock-chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.mock-chat-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding-inline: 20px;
+  background: var(--toolbar);
+  color: var(--toolbar-foreground);
+}
+
+.mock-thread-title {
+  overflow: hidden;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mock-project-chip {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--toolbar-control);
+  color: var(--toolbar-control-foreground);
+  font-size: 12px;
+}
+
+.mock-capture-label {
+  display: none;
+  flex: none;
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.mock-workspace {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mock-conversation {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--background);
+}
+
+/* The end of the timeline clears the composer overlay, which mockup.ts measures. Rows fade out
+   under the header, as in T3 Code. */
+.messages-timeline-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px var(--lane-padding) var(--composer-clearance, 15rem);
+  scrollbar-color: var(--input) transparent;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, transparent, #000 1.5rem);
+}
+
+.chat-content-lane {
+  width: 100%;
+  min-width: 0;
+  max-width: var(--chat-content-max-width);
+  margin-inline: auto;
+}
+
+[data-timeline-row-kind] {
+  padding-bottom: 16px;
+}
+
+.mock-message {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.mock-user-lane {
+  display: flex;
+  justify-content: flex-end;
+}
+
+[data-user-message-bubble] {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--message-surface);
+  color: var(--message-foreground);
+}
+
+.mock-work,
+.mock-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--secondary-label);
+}
+
+.mock-work svg {
+  flex: none;
+  color: var(--icon-muted);
+}
+
+.mock-work time {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.mock-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--focus);
+}
+
+/* As wide as its longest line, so an opaque block doesn't cover the moons that themes such as
+   Save Point paint at the right of the conversation. */
+.mock-code {
+  overflow-x: auto;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--code-background);
+  color: var(--code-foreground);
+  font:
+    13px/1.6 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+/* Composer. Each positioned level below matches a positioned level in T3 Code. The form itself
+   isn't positioned: art drawn on the form while a drawer is open stands on .mock-form-anchor,
+   whose top edge is the drawer's. */
+
+.mock-composer-overlay {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  padding-top: 8px;
+  pointer-events: none;
+}
+
+.chat-composer-lane {
+  width: 100%;
+  padding-inline: var(--lane-padding);
+}
+
+[data-chat-composer-stack] {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: var(--chat-content-max-width);
+  margin-inline: auto;
+  pointer-events: auto;
+}
+
+.mock-stack-anchor,
+.mock-form-anchor {
+  position: relative;
+  z-index: 10;
+}
+
+.mock-shell-frame,
+.mock-card-frame {
+  position: relative;
+}
+
+[data-slot="composer-shell"] {
+  --chat-composer-glass-surface: var(--surface-raised);
+  --chat-composer-outline: color-mix(in srgb, var(--input) 30%, var(--background));
+  --chat-composer-highlight: color-mix(in srgb, var(--input) 12%, transparent);
+
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: var(--chat-content-max-width);
+  margin-inline: auto;
+  container: composer-surface / inline-size;
+}
+
+[data-slot="composer-host"] {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  border-radius: 16px;
+}
+
+/* The composer's glass. The host paints it at rest. While a drawer is open, the card and the drawer
+   paint it instead, so the colour doesn't change when the paint moves between them. */
+[data-slot="composer-host"]::before,
+[data-slot="composer-shell"]:has([data-composer-banner-surface="attached"])
+  [data-chat-composer-main-surface],
+.mock-drawer::before {
+  background: color-mix(
+    in srgb,
+    var(--chat-composer-glass-surface) var(--glass-opacity),
+    transparent
+  );
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+
+/* With a context strip below the card, the host paints the card's glass. */
+[data-slot="composer-host"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+[data-slot="composer-host"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 1px solid var(--chat-composer-outline);
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--chat-composer-highlight);
+  pointer-events: none;
+}
+
+[data-chat-composer-form] {
+  width: 100%;
+  min-width: 0;
+  max-width: var(--chat-content-max-width);
+  margin: 0 auto;
+}
+
+[data-chat-composer-main-surface] {
+  position: relative;
+  z-index: 10;
+  padding: 1px;
+  border-radius: 16px;
+}
+
+.composer-tiptap {
+  overflow-y: auto;
+  min-height: 50px;
+  max-height: 200px;
+  padding: 14px 16px 4px;
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  outline: none;
+}
+
+.composer-tiptap:empty::before {
+  content: attr(data-placeholder);
+  color: var(--placeholder);
+  pointer-events: none;
+}
+
+.mock-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px 8px 10px;
+}
+
+.mock-composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mock-tool {
+  display: inline-grid;
+  place-items: center;
+  height: 28px;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mock-tool-icon {
+  width: 28px;
+  padding: 0;
+}
+
+.mock-tool:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  color: var(--foreground);
+}
+
+.mock-primary-action {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--message-action);
+  color: var(--message-action-foreground);
+  cursor: pointer;
+}
+
+.mock-primary-action:hover {
+  background: var(--message-action-hover);
+}
+
+.mock-primary-action .mock-icon-stop,
+.mock-primary-action[data-running="true"] .mock-icon-send {
+  display: none;
+}
+
+.mock-primary-action[data-running="true"] .mock-icon-stop {
+  display: block;
+}
+
+.mock-app button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* A row under the card. Page-coloured glass hides the timeline scrolling behind it. */
+[data-slot="composer-context-strip"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: clip;
+  width: 100%;
+  padding: 6px 8px 10px;
+  background: color-mix(in srgb, var(--background) var(--glass-opacity), transparent);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+
+.mock-context-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding-inline: 8px;
+  border-radius: 6px;
+}
+
+/* The question drawer. While it's open, the drawer and the card each paint their own glass and
+   outline, and the host paints neither. */
+
+[data-slot="composer-shell"]:has([data-composer-banner-surface="attached"])
+  [data-slot="composer-host"]::before,
+[data-slot="composer-shell"]:has([data-composer-banner-surface="attached"])
+  [data-slot="composer-host"]::after {
+  display: none;
+}
+
+[data-slot="composer-shell"]:has([data-composer-banner-surface="attached"])
+  [data-chat-composer-main-surface]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border: 1px solid var(--chat-composer-outline);
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--chat-composer-highlight);
+  pointer-events: none;
+}
+
+.mock-drawer-dock {
+  display: flex;
+  align-items: flex-end;
+  width: calc(100% - 2 * var(--drawer-inset));
+  margin: 0 auto calc(-1 * var(--attachment-overlap));
+}
+
+.mock-drawer {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* The part under the card is masked out, so the two glass layers don't stack there. */
+.mock-drawer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--chat-composer-outline);
+  border-radius: 16px 16px 0 0;
+  pointer-events: none;
+  mask-image: linear-gradient(to top, transparent 1rem, #000 1rem);
+}
+
+.mock-drawer::after {
+  content: "";
+  display: block;
+  height: calc(var(--attachment-overlap) + 4px);
+}
+
+.mock-drawer-meta {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.mock-drawer-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mock-drawer-option {
+  height: 28px;
+  padding-inline: 12px;
+  border: 1px solid var(--chat-composer-outline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mock-drawer-option:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
