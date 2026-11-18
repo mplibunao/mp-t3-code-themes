@@ -57,7 +57,7 @@ The root `vite.config.ts` enforces the table with Oxlint's restricted-imports an
 
 - Branch names follow gitflow: `feature/`, `bugfix/`, `hotfix/`, `release/`.
 - Commit messages follow Conventional Commits. The commit-msg hook runs Vale on each message and rejects AI attribution, such as an AI co-author trailer.
-- The history becomes public at launch. Never commit workstation paths, personal data, credentials, agent transcripts, or session links.
+- The history is public. Never commit workstation paths, personal data, credentials, agent transcripts, or session links.
 - `docs/plans/`, `docs/ledgers/`, `docs/reviews/`, and `prompt-exports/` are local working folders. Never stage them. They stay out of `.gitignore` because RepoPrompt can't select ignored files.
 - A pull request with a change that shows in the demo includes a new capture from `pnpm previews:capture`. Its diff then shows the old and the new pictures side by side. Don't capture for a change that doesn't show: each new GIF adds its whole size to the history.
 - `mise.toml` and the pnpm catalog in `pnpm-workspace.yaml` pin every tool and dependency. A new version must be at least seven days old, and pnpm enforces that for packages. Don't weaken the cooldown or the trust policy to get an install through.
