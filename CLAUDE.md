@@ -11,6 +11,7 @@ A TypeScript workspace that builds T3 Code themes.
 - `pnpm test` runs the Vitest tests under `test/`.
 - `pnpm themes:build` builds every theme into `themes/`. The files there are generated: change the source under `src/` and build again.
 - `pnpm themes:check` builds every theme in memory and compares the result with `themes/`, byte for byte. It doesn't write files.
+- `pnpm themes:install [id...] [--base-dir DIR]` copies the files in `themes/` into `<home>/userdata/themes` without rebuilding them. No ids means every theme. The home is `--base-dir`, then `T3CODE_HOME`, then `~/.t3`. The command then runs `t3 theme show --base-dir <home>` once and warns when a theme isn't listed. It exits 0 once it has copied the files, whatever the check finds.
 
 ## Dependency directions
 
