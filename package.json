@@ -1,0 +1,31 @@
+{
+  "name": "mp-t3-code-themes",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prepare": "vp config --no-agent",
+    "typecheck": "tsc -p tsconfig.scripts.json && tsc -p site/tsconfig.json",
+    "test": "vp test run"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "catalog:",
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@mplibunao/oxlint-standards": "catalog:",
+    "@mplibunao/tsconfig": "catalog:",
+    "@playwright/test": "catalog:",
+    "@stryker-mutator/core": "catalog:",
+    "@stryker-mutator/vitest-runner": "catalog:",
+    "bun-types": "catalog:",
+    "oxlint": "catalog:",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@11.28.11+sha512.740184d10f81f5d5b165be88560ee7ba62406c4134896abc27a580109eec2f47c1e41d91251c944c2cababcb1c22461799ebb72de2ec625af2030b0e36c735a3"
+}

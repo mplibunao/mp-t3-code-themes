@@ -9,6 +9,7 @@ styles/ai-tells/
 styles/ai-tells-commits/
 styles/alex/
 styles/write-good/
+styles/config/templates/
 
 # Test, capture, and mutation output
 coverage/

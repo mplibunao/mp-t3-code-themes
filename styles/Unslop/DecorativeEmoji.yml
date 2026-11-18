@@ -1,0 +1,6 @@
+extends: existence
+message: "Decorative emoji '%s'. Say it in words or drop it."
+level: warning
+nonword: true
+tokens:
+  - "[🌀-🫿☀-➿⬆⬇⬅⭐⭕]"
