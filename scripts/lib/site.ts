@@ -2,51 +2,62 @@
 // Vite in site/. The site serves the files that `pnpm themes:check` compares, and nothing here
 // runs the renderer.
 
-import { Console, Data, Effect, type FileSystem, Path, Runtime } from "effect";
+import { Effect, type FileSystem, Path } from "effect";
 import { ChildProcess, type ChildProcessSpawner } from "effect/process";
 import { themeIds } from "../../src/catalog.ts";
 import { copyCommittedThemes } from "./artifacts.ts";
+import { Reported, reportFailure } from "./reported.ts";
 
 /** `build` writes dist/. `dev` serves the site until it's interrupted. */
 export type SiteCommand = "build" | "dev";
 
 const FAILURE = 1;
 
-/** The message is already on the terminal, so the runtime only sets the exit code. */
-export class Reported extends Data.TaggedError("Reported")<{ readonly exitCode: number }> {
-  public override readonly [Runtime.errorReported] = false;
+/** The repository root, found from this file's place in scripts/lib/. */
+export const repositoryRoot = Effect.gen(function* () {
+  const path = yield* Path.Path;
+  return yield* path.fromFileUrl(new URL("../..", import.meta.url));
+});
 
-  public override get [Runtime.errorExitCode](): number {
-    return this.exitCode;
-  }
-}
+/**
+ * The repository's `vp`, with site/ as its working folder, so that Vite reads site/vite.config.ts.
+ *
+ * @param args - The arguments to `vp`.
+ * @param options - Process options. The working folder is always site/.
+ * @returns The handle of the spawned `vp`. Closing the caller's scope stops it.
+ */
+export const spawnSiteVite = Effect.fnUntraced(function* (
+  args: readonly string[],
+  options: ChildProcess.CommandOptions,
+) {
+  const path = yield* Path.Path;
+  const root = yield* repositoryRoot;
+  return yield* ChildProcess.make(path.join(root, "node_modules", ".bin", "vp"), [...args], {
+    ...options,
+    cwd: path.join(root, "site"),
+  });
+});
 
 // Vite shares the terminal, so its own output and Ctrl-C reach it directly. Closing the scope
 // stops it when the command is interrupted.
-const runVite = Effect.fnUntraced(function* (root: string, command: SiteCommand) {
-  const path = yield* Path.Path;
-  const handle = yield* ChildProcess.make(
-    path.join(root, "node_modules", ".bin", "vp"),
-    [command],
-    {
-      cwd: path.join(root, "site"),
-      stdin: "inherit",
-      stdout: "inherit",
-      stderr: "inherit",
-    },
-  );
-  return yield* handle.exitCode;
+const runVite = Effect.fnUntraced(function* (command: SiteCommand) {
+  const vite = yield* spawnSiteVite([command], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  return yield* vite.exitCode;
 });
 
 const prepareAndRun = Effect.fnUntraced(function* (command: SiteCommand) {
   const path = yield* Path.Path;
-  const root = yield* path.fromFileUrl(new URL("../..", import.meta.url));
+  const root = yield* repositoryRoot;
   yield* copyCommittedThemes(
     path.join(root, "themes"),
     path.join(root, ".site-public", "themes"),
     themeIds,
   );
-  const exitCode = yield* Effect.scoped(runVite(root, command));
+  const exitCode = yield* Effect.scoped(runVite(command));
   if (exitCode !== 0) {
     return yield* new Reported({ exitCode });
   }
@@ -65,13 +76,4 @@ export const runSite = (
   void,
   Reported,
   FileSystem.FileSystem | Path.Path | ChildProcessSpawner.ChildProcessSpawner
-> =>
-  prepareAndRun(command).pipe(
-    Effect.catch((error) =>
-      error instanceof Reported
-        ? Effect.fail(error)
-        : Console.error(error.message).pipe(
-            Effect.andThen(Effect.fail(new Reported({ exitCode: FAILURE }))),
-          ),
-    ),
-  );
+> => prepareAndRun(command).pipe(Effect.catch((error) => reportFailure(error, FAILURE)));

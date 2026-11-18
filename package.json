@@ -12,6 +12,7 @@
     "themes:install": "bun scripts/themes.ts install",
     "build": "bun scripts/build-site.ts",
     "dev": "bun scripts/dev.ts",
+    "previews:capture": "bun scripts/capture.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
