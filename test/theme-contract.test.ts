@@ -40,6 +40,18 @@ describe("validateBuiltTheme", () => {
       path: '["id"]',
     },
     {
+      problem: "an id that T3 Code doesn't read",
+      candidate: { ...theme, id: "save_point" },
+      reason: "lowercase letters, digits, and hyphens",
+      path: '["id"]',
+    },
+    {
+      problem: "an accent that isn't a hexadecimal colour",
+      candidate: withDocument({ accent: "#f0b765f" }),
+      reason: "hexadecimal colour",
+      path: '["document"]["accent"]',
+    },
+    {
       problem: "a backslash in the CSS",
       candidate: withDocument({ css: 'a::before { content: "\\2014"; }' }),
       reason: "without a backslash",
