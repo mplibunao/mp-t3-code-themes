@@ -42,6 +42,28 @@ const renameFails = Layer.effect(
   }),
 ).pipe(Layer.provide(NodeServices.layer));
 
+// A way a committed file goes stale, and how the check must report it.
+interface StaleEdit {
+  readonly edit: string;
+  /** The stale bytes, or null to delete the file. */
+  readonly apply: (bytes: Uint8Array) => Uint8Array | null;
+  readonly state: "missing" | "differing";
+}
+
+const staleEdits: readonly StaleEdit[] = [
+  {
+    edit: "one byte changes",
+    apply: (bytes) => bytes.map((byte, index) => (index === 100 ? (byte + 1) % 256 : byte)),
+    state: "differing",
+  },
+  { edit: "the last byte goes", apply: (bytes) => bytes.slice(0, -1), state: "differing" },
+  { edit: "the file goes", apply: () => null, state: "missing" },
+];
+
+const staleCases = ["save-point.png", "save-point.json"].flatMap((name) =>
+  staleEdits.map((stale) => ({ name, ...stale })),
+);
+
 describe("theme files", () => {
   it("are the same on every build", async () => {
     const [first, second] = await Effect.runPromise(Effect.all([buildThemes(), buildThemes()]));
@@ -56,29 +78,31 @@ describe("theme files", () => {
     expect(secondFiles).toStrictEqual(firstFiles);
   });
 
-  it.each(["save-point.png", "save-point.json"])(
-    "fail the check after one byte of %s changes, which stays changed",
-    (name) =>
-      run(
-        Effect.gen(function* () {
-          const fs = yield* FileSystem.FileSystem;
-          const path = yield* Path.Path;
-          const { directory, themes } = yield* publishedFolder;
-          yield* checkThemes(directory, themes);
+  it.each(staleCases)("fail the check when $edit in $name, and leave it that way", (stale) =>
+    run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const { directory, themes } = yield* publishedFolder;
+        yield* checkThemes(directory, themes);
 
-          const file = path.join(directory, name);
-          const built = yield* fs.readFile(file);
-          const stale = built.map((byte, index) => (index === 100 ? (byte + 1) % 256 : byte));
-          yield* fs.writeFile(file, stale);
+        const file = path.join(directory, stale.name);
+        const bytes = stale.apply(yield* fs.readFile(file));
+        yield* bytes === null ? fs.remove(file) : fs.writeFile(file, bytes);
 
-          const result = yield* Effect.result(checkThemes(directory, themes));
-          expect(result).toMatchObject({
-            _tag: "Failure",
-            failure: { _tag: "StaleThemeFiles", missing: [], differing: [file] },
-          });
-          expect(yield* fs.readFile(file)).toStrictEqual(stale);
-        }),
-      ),
+        const result = yield* Effect.result(checkThemes(directory, themes));
+        expect(result).toMatchObject({
+          _tag: "Failure",
+          failure: {
+            _tag: "StaleThemeFiles",
+            missing: stale.state === "missing" ? [file] : [],
+            differing: stale.state === "differing" ? [file] : [],
+          },
+        });
+        const after = (yield* fs.exists(file)) ? yield* fs.readFile(file) : null;
+        expect(after).toStrictEqual(bytes);
+      }),
+    ),
   );
 
   it("keep their previous contents whole when a rename fails", () =>

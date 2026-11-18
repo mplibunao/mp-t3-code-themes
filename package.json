@@ -13,7 +13,8 @@
     "build": "bun scripts/build-site.ts",
     "dev": "bun scripts/dev.ts",
     "previews:capture": "bun scripts/capture.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:mutation": "stryker run"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",

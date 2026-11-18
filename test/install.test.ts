@@ -14,7 +14,7 @@ import {
   Stream,
   type Scope,
 } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import { ChildProcess, ChildProcessSpawner, CommandLine } from "effect/process";
 import { describe, expect, it } from "vite-plus/test";
 import { installThemes } from "../scripts/lib/install.ts";
 
@@ -55,14 +55,16 @@ const finished = (stdout: string) => {
   });
 };
 
-// A `t3` that exits 0 after printing the output for the folder it's given, and records its
-// arguments.
+// A `t3` that exits 0 after printing the output for the folder it's given, and records the
+// command it ran.
 const t3Prints = (output: (themes: string) => string, calls: string[][]) =>
   Layer.succeed(ChildProcessSpawner.ChildProcessSpawner)(
     ChildProcessSpawner.make((command) => {
-      const args = ChildProcess.isStandardCommand(command) ? command.args.map(String) : [];
-      calls.push(args);
-      return Effect.succeed(finished(output(`${args.at(-1)}/userdata/themes`)));
+      const line = ChildProcess.isStandardCommand(command)
+        ? [command.command, ...command.args.map(String)]
+        : [];
+      calls.push(line);
+      return Effect.succeed(finished(output(`${line.at(-1)}/userdata/themes`)));
     }),
   );
 
@@ -115,9 +117,9 @@ describe("themes:install", () => {
     { chosen: "flag", baseDir: Option.some("flag"), t3Home: Option.some("env") },
     { chosen: "env", baseDir: Option.none<string>(), t3Home: Option.some("env") },
     { chosen: "home/.t3", baseDir: Option.none<string>(), t3Home: Option.some(" ") },
-  ])("copies into $chosen and checks that folder", ({ chosen, baseDir, t3Home }) => {
+  ])("uses $chosen for the copy, the check, and t3 theme set", ({ chosen, baseDir, t3Home }) => {
     const calls: string[][] = [];
-    const { console } = captureConsole();
+    const { printed, console } = captureConsole();
     return run(
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
@@ -130,6 +132,9 @@ describe("themes:install", () => {
           home: join("home"),
         }).pipe(Effect.provideService(Console.Console, console));
 
+        expect(printed.log).toContain("T3 Code lists save-point as published.");
+        expect(printed.error).toStrictEqual([]);
+
         const themes = `${chosen}/userdata/themes`;
         const outsideSource = (yield* fs.readDirectory(root, { recursive: true })).filter(
           (entry) => !entry.startsWith("source"),
@@ -141,7 +146,11 @@ describe("themes:install", () => {
         expect(yield* fs.readFileString(join(themes, "save-point.json"))).toBe(
           committed["save-point.json"],
         );
-        expect(calls).toStrictEqual([["theme", "show", "--base-dir", join(chosen)]]);
+        expect(calls).toStrictEqual([["t3", "theme", "show", "--base-dir", join(chosen)]]);
+        // t3 finds T3CODE_HOME and the home folder itself, so only --base-dir is repeated.
+        const flags = Option.isSome(baseDir) ? ["--base-dir", join(chosen)] : [];
+        const select = CommandLine.display(["t3", "theme", "set", ...flags, "save-point"]);
+        expect(printed.log).toContain(`To select save-point, run: ${select}`);
       }),
       t3Prints(() => listedOutput, calls),
     );

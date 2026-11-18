@@ -2,6 +2,15 @@
 
 A TypeScript workspace that builds T3 Code themes.
 
+- The [README](README.md) covers [installing](README.md#install), [compatibility](README.md#compatibility), [developing](README.md#develop), [adding a theme](README.md#add-a-theme), [capturing previews](README.md#capture), and [recovery](README.md#recovery).
+- [`docs/decisions/001-repository-shape.md`](docs/decisions/001-repository-shape.md) records the decisions behind the repository's layout and the reasons for them.
+
+## What's generated
+
+- Written by hand: `src/`, `scripts/`, `site/`, `test/`, `e2e/`, the configuration, and the documents.
+- Generated and committed: `themes/`, by `pnpm themes:build`, and `previews/`, by `pnpm previews:capture`. Never edit them by hand. Change the source, then build or capture again.
+- Generated and ignored: `dist/`, `.site-public/`, `reports/`, `.stryker-tmp/`, the test and Playwright output, and the Vale styles that `just setup` syncs into `styles/`. `styles/Unslop/` is tracked.
+
 ## Commands
 
 - `mise install` installs the pinned tools. `pnpm install` then installs dependencies and sets up the git hooks.
@@ -14,8 +23,9 @@ A TypeScript workspace that builds T3 Code themes.
 - `pnpm build` copies the committed files in `themes/` into `.site-public/themes/`, then builds the demo in `site/` into `dist/`, under the base path `/mp-t3-code-themes/`. It never rebuilds the themes.
 - `pnpm dev` makes the same copy once, then serves the demo with Vite.
 - `pnpm test:e2e` runs the Playwright tests in `e2e/` against `dist/`, so run `pnpm build` first. On a new machine, `pnpm exec playwright install chromium` downloads the pinned browser once.
-- `pnpm previews:capture [id]` records `previews/<id>/` from the demo while its animations run. It builds the demo and serves it on `127.0.0.1:4173`. It writes `resting.png`, `ready.png`, `working.png`, `waiting.png`, and `preview.gif`, a 32-second loop. Without an id, it captures `save-point`. It needs `ffmpeg` on the `PATH` and a free port 4173, because it never uses a server it didn't start. It replaces the files only after it has recorded every one, and it stops when a frame starts more than 50 ms after its deadline. CI doesn't run it.
-- `pnpm themes:install [id...] [--base-dir DIR]` copies the files in `themes/` into `<home>/userdata/themes` without rebuilding them. No ids means every theme. The home is `--base-dir`, then `T3CODE_HOME`, then `~/.t3`. The command then runs `t3 theme show --base-dir <home>` once and warns when a theme isn't listed. It exits 0 once it has copied the files, whatever the check finds.
+- `pnpm previews:capture [id]` records `previews/<id>/` from the demo while its animations run, as [Capture](README.md#capture) describes. It never uses a server it didn't start, and it replaces the files only after it has recorded all of them. CI doesn't run it.
+- `pnpm themes:install [id...] [--base-dir DIR]` copies the files in `themes/` into a T3 Code home and checks them once with `t3 theme show`, as [From a clone](README.md#from-a-clone) describes. Without `--base-dir` it writes into `T3CODE_HOME` or `~/.t3`, so give it a scratch folder when you try it.
+- `pnpm test:mutation` runs Stryker over the contract, the renderer's helpers and CSS construction, publishing, and the installer, and writes its report to `reports/mutation/`. A reviewer runs it and decides what each surviving mutant means. It doesn't fail on the mutation score, and CI doesn't run it. What this lane can't catch, and the check that does, is explained in [Committed theme files](docs/decisions/001-repository-shape.md#committed-theme-files).
 
 ## Dependency directions
 
@@ -30,6 +40,18 @@ The renderer and the theme contract build themes in memory, the scripts run unde
 | `test/**`, `e2e/**`                          | What they test. `e2e/**` reaches the site only through the browser.                                                          | Code under `src/`, `scripts/`, and `site/` doesn't import from `test/` or `e2e/`. |
 
 The root `vite.config.ts` enforces the table with Oxlint's restricted-imports and restricted-globals rules. Those rules match the text of an import, not the file it resolves to. `tsconfig.scripts.json` has no DOM library, so TypeScript rejects `document` and `window` in `src/`. Bun's types still declare `fetch`, `navigator`, and a few other web APIs. The lint rules ban those in `src/`. `test/boundaries.test.ts` replays allowed and prohibited imports for each row through the real lint configuration. Change the table, the rules, and the test together.
+
+## Checking a change
+
+- `just check` passes. A renderer change comes with the rebuilt files in `themes/`, because `just check` runs `pnpm themes:check`.
+- The demo isn't T3 Code. A change that shows in a theme also needs a person to check it in T3 Code 0.1.10 with the installed files. For Save Point, that check covers these points:
+  - `t3 theme show` lists the theme, and `t3 theme set` selects it by id.
+  - At least 65 seconds of the working state, without a break, show the slime, the bat, the ghost, and the dragon.
+  - Ready, waiting, a narrow composer, and reduced motion each look right.
+  - Message text and secondary text are readable over the landscape.
+  - The stage stands on the composer, and on the question drawer while one is open.
+- After that check, update [Compatibility](README.md#compatibility) with what was seen.
+- Paused or seeked frames can differ from what running animations show, as the comments at the top of `scripts/lib/capture.ts` and `src/save-point/css/encounters.ts` explain. Don't judge an animation through Playwright's clock, `pause()`, `currentTime`, animation seeking, or virtual time. The capture command records running animations for this reason.
 
 ## Rules
 
