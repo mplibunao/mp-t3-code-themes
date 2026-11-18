@@ -1,0 +1,24 @@
+# Dependencies and build output
+node_modules/
+dist/
+.site-public/
+
+# Vale packages synced by `just setup`. The Unslop style is tracked.
+styles/Google/
+styles/ai-tells/
+styles/ai-tells-commits/
+styles/alex/
+styles/write-good/
+
+# Test, capture, and mutation output
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.stryker-tmp/
+reports/
+
+# Local caches and temporary files
+*.tsbuildinfo
+*.tmp
+.DS_Store
