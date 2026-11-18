@@ -1,11 +1,11 @@
-// The files in themes/: serialization, validation, comparison with the committed files, and
-// publishing. T3 Code publishes a theme as soon as a `.json` name appears in its folder and reads
-// the image beside it, so every file is written under a temporary name and renamed into place,
-// the image before its JSON.
+// The files in themes/: serialization, validation, comparison with the committed files,
+// publishing, and copies of the committed files for the installer and the site. T3 Code publishes
+// a theme as soon as a `.json` name appears in its folder and reads the image beside it, so every
+// file is written under a temporary name and renamed into place, the image before its JSON.
 
 import { Data, Effect, Exit, FileSystem, Path, type Schema } from "effect";
 import type { PlatformError } from "effect/PlatformError";
-import { catalog } from "../../src/catalog.ts";
+import { catalog, type ThemeId } from "../../src/catalog.ts";
 import {
   validateBuiltTheme,
   type BuiltTheme,
@@ -40,6 +40,16 @@ export class StaleThemeFiles extends Data.TaggedError("StaleThemeFiles")<{
       ...this.differing.map((path) => `${path} differs from the build.`),
     ];
     return `${lines.join("\n")}\nRun pnpm themes:build and commit the result.`;
+  }
+}
+
+/** Committed theme files that aren't there. */
+export class MissingThemeFiles extends Data.TaggedError("MissingThemeFiles")<{
+  readonly paths: readonly string[];
+}> {
+  public override get message(): string {
+    const lines = this.paths.map((path) => `${path} is missing.`);
+    return `${lines.join("\n")}\nRun pnpm themes:build first.`;
   }
 }
 
@@ -153,6 +163,56 @@ export const writeThemes = (
   InvalidTheme | PublishError | PlatformError,
   FileSystem.FileSystem | Path.Path
 > => renderThemeFiles(themes).pipe(Effect.flatMap((files) => publishFiles(directory, files)));
+
+// The image comes before its JSON: T3 Code publishes a theme as soon as the JSON appears.
+const committedNames = (id: ThemeId): string[] => {
+  const { background }: { readonly background?: string } = catalog[id];
+  return background ? [`${id}.${background}`, `${id}.json`] : [`${id}.json`];
+};
+
+/**
+ * Reads the committed files of the selected themes. Reads nothing when one of them is missing.
+ *
+ * @param source - The folder that holds the committed theme files.
+ * @param ids - Catalogued ids, each once.
+ * @returns Each theme's files in publishing order: the background, then the JSON.
+ */
+export const readCommittedFiles = Effect.fnUntraced(function* (
+  source: string,
+  ids: readonly ThemeId[],
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const paths = ids.flatMap(committedNames).map((name) => path.join(source, name));
+  const present = yield* Effect.forEach(paths, (file) => fs.exists(file));
+  const missing = paths.filter((_, index) => present[index] !== true);
+  if (missing.length > 0) {
+    return yield* new MissingThemeFiles({ paths: missing });
+  }
+  return yield* Effect.forEach(paths, (file) =>
+    Effect.map(fs.readFile(file), (bytes): ThemeFile => ({ name: path.basename(file), bytes })),
+  );
+});
+
+/**
+ * Replaces `destination` with the committed files of the selected themes, for the site build. The
+ * folder is emptied first, so the site serves no file of a theme that left the catalog.
+ *
+ * @param source - The folder that holds the committed theme files.
+ * @param destination - The site's themes folder, which the build copies into its output.
+ * @param ids - Catalogued ids, each once.
+ * @returns The paths written, in order.
+ */
+export const copyCommittedThemes = Effect.fnUntraced(function* (
+  source: string,
+  destination: string,
+  ids: readonly ThemeId[],
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const files = yield* readCommittedFiles(source, ids);
+  yield* fs.remove(destination, { recursive: true, force: true });
+  return yield* publishFiles(destination, files);
+});
 
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.length === b.length && a.every((byte, index) => byte === b[index]);

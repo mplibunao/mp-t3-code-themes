@@ -3,11 +3,11 @@
 // `pnpm themes:check` compares and never rebuilds them, so the installed image doesn't depend on
 // the Bun that runs the command.
 
-import { Console, Data, Effect, FileSystem, Option, Path, Predicate, Result, Stream } from "effect";
+import { Console, Effect, Option, Path, Predicate, Result, Stream } from "effect";
 import type { PlatformError } from "effect/PlatformError";
 import { ChildProcess, CommandLine } from "effect/process";
-import { catalog, type ThemeId } from "../../src/catalog.ts";
-import { publishFiles, type ThemeFile } from "./artifacts.ts";
+import type { ThemeId } from "../../src/catalog.ts";
+import { publishFiles, readCommittedFiles } from "./artifacts.ts";
 
 const SHOW_TIMEOUT = "10 seconds";
 // How long `t3` has to exit after the timeout's SIGTERM before it gets SIGKILL.
@@ -33,16 +33,6 @@ export interface InstallRequest {
   readonly home: string;
 }
 
-/** Committed theme files that aren't there. */
-export class MissingThemeFiles extends Data.TaggedError("MissingThemeFiles")<{
-  readonly paths: readonly string[];
-}> {
-  public override get message(): string {
-    const lines = this.paths.map((path) => `${path} is missing.`);
-    return `${lines.join("\n")}\nRun pnpm themes:build first.`;
-  }
-}
-
 interface ShowOutput {
   /** None when `t3` didn't finish in time. */
   readonly exitCode: Option.Option<number>;
@@ -59,26 +49,6 @@ const resolveBaseDir = Effect.fnUntraced(function* (request: InstallRequest) {
     Option.getOrElse(() => path.join(request.home, ".t3")),
   );
   return path.resolve(base);
-});
-
-// The image comes before its JSON: T3 Code publishes a theme as soon as the JSON appears.
-const committedNames = (id: ThemeId): string[] => {
-  const { background }: { readonly background?: string } = catalog[id];
-  return background ? [`${id}.${background}`, `${id}.json`] : [`${id}.json`];
-};
-
-const readCommittedFiles = Effect.fnUntraced(function* (source: string, ids: readonly ThemeId[]) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const paths = ids.flatMap(committedNames).map((name) => path.join(source, name));
-  const present = yield* Effect.forEach(paths, (file) => fs.exists(file));
-  const missing = paths.filter((_, index) => present[index] !== true);
-  if (missing.length > 0) {
-    return yield* new MissingThemeFiles({ paths: missing });
-  }
-  return yield* Effect.forEach(paths, (file) =>
-    Effect.map(fs.readFile(file), (bytes): ThemeFile => ({ name: path.basename(file), bytes })),
-  );
 });
 
 const collect = (stream: Stream.Stream<Uint8Array, PlatformError>, into: string[]) =>

@@ -4,7 +4,6 @@
     "src/**/*.ts",
     "scripts/**/*.ts",
     "test/**/*.ts",
-    "e2e/**/*.ts",
     "*.config.ts",
     "site/vite.config.ts"
   ]

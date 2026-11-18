@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Live demo of themes for T3 Code: switch between resting, ready, working, and waiting, and watch the theme react."
+    />
+    <title>T3 Code themes: live demo</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./src/page.css" />
+    <link rel="stylesheet" href="./src/mockup.css" />
+  </head>
+  <body>
+    <header class="demo-controls">
+      <h1 class="demo-title">T3 Code themes</h1>
+      <label class="demo-field">
+        <span class="demo-field-label">Theme</span>
+        <select id="theme-select" class="demo-select"></select>
+      </label>
+      <div class="demo-states" role="group" aria-label="Agent state">
+        <button type="button" class="demo-state" data-demo-state="resting" aria-pressed="true">
+          Resting
+        </button>
+        <button type="button" class="demo-state" data-demo-state="ready" aria-pressed="false">
+          Ready
+        </button>
+        <button type="button" class="demo-state" data-demo-state="working" aria-pressed="false">
+          Working
+        </button>
+        <button type="button" class="demo-state" data-demo-state="waiting" aria-pressed="false">
+          Waiting
+        </button>
+      </div>
+      <label class="demo-field demo-width">
+        <span class="demo-field-label">Chat width</span>
+        <select id="width-select" class="demo-select">
+          <option value="comfortable">Comfortable</option>
+          <option value="wide">Wide</option>
+          <option value="full">Full</option>
+        </select>
+      </label>
+    </header>
+    <div id="demo-status" class="demo-status" role="status" hidden>
+      <span id="demo-status-text"></span>
+      <button type="button" id="demo-retry" class="demo-retry" hidden>Retry</button>
+    </div>
+    <div id="mock-viewport" class="mock-viewport"></div>
+    <footer class="demo-notice">
+      Independent mock-up of T3 Code's layout with a made-up conversation. Not affiliated with T3
+      Code.
+    </footer>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

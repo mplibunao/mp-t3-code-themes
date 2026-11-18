@@ -1,0 +1,196 @@
+/* The page around the made-up window: its controls, the status, and the notice. They take the
+   loaded theme's toolbar colours, and the pressed state takes its accent. */
+
+:root {
+  --page-bar: var(--app-theme-toolbar, #111114);
+  --page-bar-foreground: var(--app-theme-toolbar-foreground, #e7e7ec);
+  --page-bar-border: var(--app-theme-toolbar-border, #2a2a31);
+  --page-control: var(--app-theme-toolbar-control, #1d1d22);
+  --page-control-foreground: var(--app-theme-toolbar-control-foreground, #e7e7ec);
+  --page-control-hover: var(--app-theme-toolbar-control-hover, #292930);
+  --page-pressed: var(--app-theme-accent, #e7e7ec);
+  --page-pressed-foreground: var(--app-theme-accent-foreground, #17171c);
+  --page-focus: var(--app-theme-focus, #a0a0ab);
+  --page-muted: var(--app-theme-text-muted, #a0a0ab);
+  --page-error: var(--app-theme-error-foreground, #f59aa8);
+  --page-error-surface: var(--app-theme-error-surface, #3a1d26);
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  background: var(--page-bar);
+  color: var(--page-bar-foreground);
+  font:
+    13px/1.4 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.demo-controls {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  min-height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--page-bar-border);
+}
+
+.demo-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.demo-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--page-muted);
+  white-space: nowrap;
+}
+
+.demo-select {
+  height: 30px;
+  padding-inline: 8px;
+  border: 1px solid var(--page-bar-border);
+  border-radius: 8px;
+  background: var(--page-control);
+  color: var(--page-control-foreground);
+  font: inherit;
+}
+
+.demo-states {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--page-bar-border);
+  border-radius: 10px;
+  background: var(--page-control);
+}
+
+.demo-state {
+  height: 28px;
+  padding-inline: 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--page-control-foreground);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.demo-state:hover {
+  background: var(--page-control-hover);
+}
+
+.demo-state[aria-pressed="true"] {
+  background: var(--page-pressed);
+  color: var(--page-pressed-foreground);
+}
+
+.demo-width {
+  margin-left: auto;
+}
+
+/* Below 640px every chat width fills the lane, so the control would change nothing. */
+@media (width < 640px) {
+  .demo-width {
+    display: none;
+  }
+}
+
+:is(.demo-state, .demo-select, .demo-retry):focus-visible {
+  outline: 2px solid var(--page-focus);
+  outline-offset: 2px;
+}
+
+.demo-status {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--page-bar-border);
+  border-radius: 10px;
+  background: var(--page-control);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  translate: -50% 0;
+}
+
+/* A load that finishes quickly shows no status at all. */
+.demo-status[data-kind="loading"] {
+  padding-right: 14px;
+  animation: demo-reveal 0s 0.4s both;
+}
+
+@keyframes demo-reveal {
+  from {
+    visibility: hidden;
+  }
+}
+
+.demo-status[data-kind="error"] {
+  border-color: color-mix(in srgb, var(--page-error) 45%, transparent);
+  background: var(--page-error-surface);
+  color: var(--page-error);
+}
+
+.demo-retry {
+  flex: none;
+  height: 28px;
+  padding-inline: 12px;
+  border: 1px solid currentcolor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.demo-notice {
+  flex: none;
+  padding: 6px 16px;
+  border-top: 1px solid var(--page-bar-border);
+  color: var(--page-muted);
+  font-size: 12px;
+}
+
+/* capture=1: the made-up window alone, with a short label in its header. */
+:root[data-capture] :is(.demo-controls, .demo-notice) {
+  display: none;
+}
+
+:root[data-capture] .mock-capture-label {
+  display: inline;
+}
