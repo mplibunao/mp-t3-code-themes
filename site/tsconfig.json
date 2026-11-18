@@ -1,0 +1,4 @@
+{
+  "extends": "@mplibunao/tsconfig/browser.json",
+  "include": ["src/**/*.ts", "../src/catalog.ts"]
+}
