@@ -7,10 +7,11 @@ vale := "vale --no-global --config .vale.ini --minAlertLevel=error"
 
 check: ci
 
-# Format check and lint, both TypeScript projects, then prose.
+# Format check and lint, both TypeScript projects, the Vitest tests, then prose.
 ci:
     pnpm exec vp check
     pnpm run typecheck
+    pnpm test
     just prose
 
 # Sync the Vale packages named in .vale.ini. Run after cloning and after .vale.ini changes.
