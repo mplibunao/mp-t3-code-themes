@@ -2,13 +2,14 @@
 // Bun and supplies the Bun-backed file-system, path, and process services to scripts/lib/.
 
 import { BunRuntime, BunServices } from "@effect/platform-bun";
-import { Console, Data, Effect, Option, Path, Runtime } from "effect";
+import { Console, Data, Effect, Option, Path } from "effect";
 import { homedir } from "node:os";
 import { parseArgs } from "node:util";
 import { isThemeId, themeIds, type ThemeId } from "../src/catalog.ts";
 import { checkThemes, writeThemes } from "./lib/artifacts.ts";
 import { buildThemes } from "./lib/build-themes.ts";
 import { installThemes } from "./lib/install.ts";
+import { reportFailure } from "./lib/reported.ts";
 
 const USAGE = `Usage: bun scripts/themes.ts <command>
 
@@ -26,15 +27,6 @@ const USAGE_FAILURE = 2;
 const FIRST_ARGUMENT = 2;
 
 class UsageError extends Data.TaggedError("UsageError")<{ readonly message: string }> {}
-
-// The message is already on standard error, so the runtime only sets the exit code.
-class Reported extends Data.TaggedError("Reported")<{ readonly exitCode: number }> {
-  public override readonly [Runtime.errorReported] = false;
-
-  public override get [Runtime.errorExitCode](): number {
-    return this.exitCode;
-  }
-}
 
 type Command =
   | { readonly name: "build" | "check" | "help" }
@@ -141,13 +133,7 @@ const run = Effect.fnUntraced(function* (command: Command) {
 const main = parseCommand(process.argv.slice(FIRST_ARGUMENT)).pipe(
   Effect.flatMap(run),
   Effect.catch((error) =>
-    Console.error(error.message).pipe(
-      Effect.andThen(
-        Effect.fail(
-          new Reported({ exitCode: error instanceof UsageError ? USAGE_FAILURE : FAILURE }),
-        ),
-      ),
-    ),
+    reportFailure(error, error instanceof UsageError ? USAGE_FAILURE : FAILURE),
   ),
   Effect.provide(BunServices.layer),
 );
